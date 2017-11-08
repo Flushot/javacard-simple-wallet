@@ -34,7 +34,7 @@ public class SimpleWalletClient {
         System.out.println("is card present: " + cardTerminal.isCardPresent());
 
         if (cardTerminal.isCardPresent()) {
-            Card card = cardTerminal.connect("T=0");
+            Card card = cardTerminal.connect("T=1");
             System.out.println("connected to card: " + card);
 
             CardChannel cardChannel = card.getBasicChannel();
@@ -53,7 +53,7 @@ public class SimpleWalletClient {
                     if (cardTerminal.isCardPresent()) {
                         System.out.println("card found... connecting....");
                         if (cardTerminal.isCardPresent()) {
-                            Card card = cardTerminal.connect("T=0");
+                            Card card = cardTerminal.connect("T=1");
                             System.out.println("connected to card: " + card);
 
                             CardChannel cardChannel = card.getBasicChannel();
