@@ -1,4 +1,4 @@
-package fitpay.javacard.simplewallet;
+package fitpay.javacard.simplewallet.client;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -13,6 +13,7 @@ import javax.smartcardio.ResponseAPDU;
 
 import com.licel.jcardsim.utils.AIDUtil;
 
+import fitpay.javacard.simplewallet.NotEnoughMoneyException;
 import jnasmartcardio.Smartcardio;
 
 @SuppressWarnings("restriction")
