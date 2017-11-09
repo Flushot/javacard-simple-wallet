@@ -14,8 +14,9 @@
         <javacard.package.aid>0xF0:0x00:0xA0:0x00:0x0E:0x00:0x01</javacard.package.aid>
         <javacard.applet.aid>0xF0:0x00:0xA0:0x00:0x0E:0x00</javacard.applet.aid>
         <javacard.applet.name>SimpleWalletApplet</javacard.applet.name>
-        <javacard.major.version>1</javacard.major.version>
-        <javacard.minor.version>0</javacard.minor.version>
+        <javacard.version>1.0</javacard.version>
+        <java.target.version>1.5</java.target.version>
+        <slf4j.version>1.7.25</slf4j.version>
     </properties>
 
     <build>
@@ -26,8 +27,8 @@
                 <version>3.3</version>
                 <configuration>
                     <!-- Anything above 1.5 will cause the cap file creation to fail -->
-                    <source>1.5</source>
-                    <target>1.5</target>
+                    <source>${java.target.version}</source>
+                    <target>${java.target.version}</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -56,7 +57,7 @@
                             <arg value="${javacard.applet.name}"/>
                             <arg value="${javacard.package.name}"/>
                             <arg value="${javacard.package.aid}"/>
-                            <arg value="${javacard.major.version}.${javacard.minor.version}"/>
+                            <arg value="${javacard.version}"/>
                             <arg value="-nowarn"/>
                             <classpath>
                                 <pathelement location="${jc.home}/api_export_files"/>
@@ -83,6 +84,31 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.github.jnasmartcardio</groupId>
+            <artifactId>jnasmartcardio</artifactId>
+            <version>0.2.7</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.17</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging-api</artifactId>
+            <version>1.1</version>
+        </dependency>
+        <dependency>
             <groupId>com.licel</groupId>
             <artifactId>jcardsim</artifactId>
             <version>3.0.4-SNAPSHOT</version>
@@ -90,14 +116,15 @@
             <systemPath>${basedir}/repos/jcardsim/jcardsim-3.0.4-SNAPSHOT.jar</systemPath>
         </dependency>
         <dependency>
-            <groupId>io.github.jnasmartcardio</groupId>
-            <artifactId>jnasmartcardio</artifactId>
-            <version>0.2.7</version>
-        </dependency>
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-all</artifactId>
+            <version>1.10.19</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
