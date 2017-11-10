@@ -9,8 +9,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 
 public class GuiSimpleWalletClient {
     private static final Logger log = LoggerFactory.getLogger(GuiSimpleWalletClient.class);
@@ -28,7 +26,7 @@ public class GuiSimpleWalletClient {
     private volatile WalletService walletService;
 
     public static void main(String[] args) {
-        JFrame frame = new JFrame("GUI Wallet");
+        JFrame frame = new JFrame("Simple Wallet");
         frame.setContentPane(new GuiSimpleWalletClient().rootPanel);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.pack();
@@ -42,6 +40,7 @@ public class GuiSimpleWalletClient {
                     int amount = Integer.parseInt(creditAmountText.getText());
                     if (amount > 0) {
                         walletService.issueCredit(amount);
+                        refreshUI();
                     }
                 } catch (CardException ex) {
                     showError(String.format("Error issuing credit: %s", ex));
@@ -55,6 +54,7 @@ public class GuiSimpleWalletClient {
                     int amount = Integer.parseInt(debitAmountText.getText());
                     if (amount > 0) {
                         walletService.issueDebit(amount);
+                        refreshUI();
                     }
                 } catch (NotEnoughMoneyException ex) {
                     showError("You can't afford that!");
