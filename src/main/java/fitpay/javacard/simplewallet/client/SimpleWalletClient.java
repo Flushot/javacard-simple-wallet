@@ -16,7 +16,7 @@ public class SimpleWalletClient {
             System.out.println("current balance: " + walletService.getBalance());
 
             System.out.println("issuing credit");
-            walletService.issueCredit(5);
+            walletService.issueCredit((short)5);
 
             System.out.println("updated balance: " + walletService.getBalance());
         } else {
@@ -28,7 +28,7 @@ public class SimpleWalletClient {
                     System.out.println("current balance: " + walletService.getBalance());
 
                     System.out.println("spending some mula");
-                    walletService.issueDebit(5);
+                    walletService.issueDebit((short)5);
 
                     System.out.println("spending completed, updated balance: " + walletService.getBalance());
                 } catch (NotEnoughMoneyException e) {

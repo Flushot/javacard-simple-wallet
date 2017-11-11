@@ -79,15 +79,25 @@ public class SimpleWalletApplet extends Applet {
         apdu.sendBytes((short)0, (short)2);
     }
 
-    private void debit(APDU apdu) {
+    private short readAmount(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
 
         byte read = (byte)apdu.setIncomingAndReceive();
-        if (read != 1) {
+        if (read < 1 || read > 2) {
             ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
         }
 
-        byte amount = buffer[ISO7816.OFFSET_CDATA];
+        short amount = buffer[ISO7816.OFFSET_CDATA];
+        if (read == 2) {
+            amount <<= 8;
+            amount |= buffer[ISO7816.OFFSET_CDATA + 1] & 0xFF;
+        }
+
+        return amount;
+    }
+
+    private void debit(APDU apdu) {
+        short amount = readAmount(apdu);
         if ((short)(balance - amount) < 0) {
             ISOException.throwIt(SW_NEGATIVE_BALANCE);
         }
@@ -96,14 +106,7 @@ public class SimpleWalletApplet extends Applet {
     }
 
     private void credit(APDU apdu) {
-        byte[] buffer = apdu.getBuffer();
-
-        byte read = (byte)apdu.setIncomingAndReceive();
-        if (read != 1) {
-            ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
-        }
-
-        byte amount = buffer[ISO7816.OFFSET_CDATA];
+        short amount = readAmount(apdu);
         if (amount < 0) {
             ISOException.throwIt(SW_INVALID_TRANSACTION_AMOUNT);
         }

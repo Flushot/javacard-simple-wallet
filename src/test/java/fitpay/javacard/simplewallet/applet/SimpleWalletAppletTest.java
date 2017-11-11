@@ -36,9 +36,19 @@ public class SimpleWalletAppletTest {
 
     @Test
     public void canIssueCredit() {
-        int amount = 5;
+        short amount = 5;
 
-        for (int i = 1;i <= 3;i++) {
+        for (int i = 1; i <= 3; i++) {
+            issueCredit(amount);
+            assertEquals(amount * i, getBalance());
+        }
+    }
+
+    @Test
+    public void canIssueCreditLarge() {
+        short amount = 1000;
+
+        for (int i = 1; i <= 3; i++) {
             issueCredit(amount);
             assertEquals(amount * i, getBalance());
         }
@@ -51,26 +61,43 @@ public class SimpleWalletAppletTest {
 
     @Test
     public void canIssueDebit() {
-        issueCredit(10);
-        issueDebit(5);
+        issueCredit((short)10);
+        issueDebit((short)5);
 
         assertEquals(5, getBalance());
     }
 
     @Test
+    public void canIssueDebitLarge() {
+        issueCredit((short)127);
+        issueCredit((short)127);
+        issueDebit((short)250);
+
+        assertEquals(4, getBalance());
+    }
+
+    @Test
     public void negativeBalanceNotAllowed() {
-        issueCredit(5);
-        ResponseAPDU response = issueDebit(10, false);
+        issueCredit((short)5);
+        ResponseAPDU response = issueDebit((short)10, false);
 
         assertNotEquals(0x9000, response.getSW());
     }
 
-    private ResponseAPDU issueDebit(int amount) {
+    private ResponseAPDU issueDebit(short amount) {
         return issueDebit(amount, true);
     }
 
-    private ResponseAPDU issueDebit(int amount, boolean forceSuccessful) {
-        byte[] request = new byte[] {(byte)0xb0, (byte)0x30, (byte)0x00, (byte)0x00, (byte)0x01, (byte)amount};
+    private ResponseAPDU issueDebit(short amount, boolean forceSuccessful) {
+        byte[] request;
+        if (amount > 127) {
+            // Large amount
+            request = new byte[] {(byte)0xb0, (byte)0x30, (byte)0x00, (byte)0x00, (byte)0x02, (byte)(amount >> 8 & 0xFF), (byte)(amount & 0xFF)};
+        } else {
+            // Small amount
+            request = new byte[] {(byte)0xb0, (byte)0x30, (byte)0x00, (byte)0x00, (byte)0x01, (byte)amount};
+        }
+
         ResponseAPDU response = simulator.transmitCommand(new CommandAPDU(request));
 
         if (forceSuccessful) {
@@ -80,8 +107,16 @@ public class SimpleWalletAppletTest {
         return response;
     }
 
-    private void issueCredit(int amount) {
-        byte[] request = new byte[] {(byte)0xb0, (byte)0x40, (byte)0x00, (byte)0x00, (byte)0x01, (byte)amount};
+    private void issueCredit(short amount) {
+        byte[] request;
+        if (amount > 127) {
+            // Large amount
+            request = new byte[] {(byte)0xb0, (byte)0x40, (byte)0x00, (byte)0x00, (byte)0x02, (byte)(amount >> 8 & 0xFF), (byte)(amount & 0xFF)};
+        } else {
+            // Small amount
+            request = new byte[] {(byte)0xb0, (byte)0x40, (byte)0x00, (byte)0x00, (byte)0x01, (byte)amount};
+        }
+
         ResponseAPDU response = simulator.transmitCommand(new CommandAPDU(request));
 
         assertEquals("issue credit failed", 0x9000, response.getSW());

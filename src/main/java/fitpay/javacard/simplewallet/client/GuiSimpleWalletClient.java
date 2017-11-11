@@ -47,7 +47,7 @@ public class GuiSimpleWalletClient {
         NumberFormatter formatter = new NumberFormatter(format);
         formatter.setValueClass(Integer.class);
         formatter.setMinimum(0);
-        formatter.setMaximum(127);
+        //formatter.setMaximum(Short.MAX_VALUE);  // Screws up input
         formatter.setAllowsInvalid(false);
         DefaultFormatterFactory formatterFactory = new DefaultFormatterFactory(formatter);
 
@@ -57,12 +57,12 @@ public class GuiSimpleWalletClient {
         creditButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 String amountText = creditAmountText.getText();
-                if (amountText.isEmpty()) {
+                if (amountText.length() == 0) {
                     return;
                 }
 
                 try {
-                    int amount = Integer.parseInt(amountText);
+                    short amount = Short.parseShort(amountText);
                     if (amount > 0) {
                         walletService.issueCredit(amount);
                         refreshUI();
@@ -76,19 +76,19 @@ public class GuiSimpleWalletClient {
 
         debitButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                String amountText = creditAmountText.getText();
-                if (amountText.isEmpty()) {
+                String amountText = debitAmountText.getText();
+                if (amountText.length() == 0) {
                     return;
                 }
 
                 try {
-                    int amount = Integer.parseInt(amountText);
+                    short amount = Short.parseShort(amountText);
                     if (amount > 0) {
                         walletService.issueDebit(amount);
                         refreshUI();
                     }
                 } catch (NotEnoughMoneyException ex) {
-                    showError("You can't afford that!");
+                    showError("Insufficient funds");
                 } catch (Exception ex) {
                     log.error("Debit error", ex);
                     showError(String.format("Error issuing debit: %s", ex.getMessage()));
@@ -101,7 +101,7 @@ public class GuiSimpleWalletClient {
     }
 
     private void showError(String message) {
-        JOptionPane.showMessageDialog(rootPanel, message);
+        JOptionPane.showMessageDialog(rootPanel, message, "Error", JOptionPane.ERROR_MESSAGE);
     }
 
     private void exitApp() {

@@ -42,6 +42,9 @@ public class WalletService {
             do {
                 terminal.waitForCardAbsent(1000);
             } while (terminal.isCardPresent());
+
+            terminal = null;
+            channel = null;
         } catch (CardException ex) {
             log.error("waitForRemoval error", ex);
             throw new RuntimeException(String.format("Error waiting for card removal: %s", ex.getMessage()));
@@ -111,24 +114,32 @@ public class WalletService {
         return buffer.asShortBuffer().get();
     }
 
-    public void issueCredit(int amount) throws CardException {
+    public void issueCredit(short amount) throws CardException {
+        byte[] request;
         if (amount > 127) {
-            throw new IllegalArgumentException("amount must be <= 127");
+            // Large amount
+            request = new byte[] {(byte)0xb0, (byte)0x40, (byte)0x00, (byte)0x00, (byte)0x02, (byte)(amount >> 8 & 0xFF), (byte)(amount & 0xFF)};
+        } else {
+            // Small amount
+            request = new byte[] {(byte)0xb0, (byte)0x40, (byte)0x00, (byte)0x00, (byte)0x01, (byte)amount};
         }
 
-        byte[] request = new byte[] {(byte)0xb0, (byte)0x40, (byte)0x00, (byte)0x00, (byte)0x01, (byte)amount};
         ResponseAPDU response = channel.transmit(new CommandAPDU(request));
         if (response.getSW() != 0x9000) {
             throw new RuntimeException("issueCredit failed: " + response);
         }
     }
 
-    public void issueDebit(int amount) throws CardException {
+    public void issueDebit(short amount) throws CardException {
+        byte[] request;
         if (amount > 127) {
-            throw new IllegalArgumentException("amount must be <= 127");
+            // Large amount
+            request = new byte[] {(byte)0xb0, (byte)0x30, (byte)0x00, (byte)0x00, (byte)0x02, (byte)(amount >> 8 & 0xFF), (byte)(amount & 0xFF)};
+        } else {
+            // Small amount
+            request = new byte[] {(byte)0xb0, (byte)0x30, (byte)0x00, (byte)0x00, (byte)0x01, (byte)amount};
         }
 
-        byte[] request = new byte[] {(byte)0xb0, (byte)0x30, (byte)0x00, (byte)0x00, (byte)0x01, (byte)amount};
         ResponseAPDU response = channel.transmit(new CommandAPDU(request));
         if (response.getSW() != 0x9000) {
             if (response.getSW() == 0xff85) {
