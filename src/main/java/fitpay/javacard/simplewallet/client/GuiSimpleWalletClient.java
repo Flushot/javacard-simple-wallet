@@ -6,16 +6,20 @@ import org.slf4j.LoggerFactory;
 
 import javax.smartcardio.*;
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.text.DefaultFormatterFactory;
+import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.NumberFormat;
 
 public class GuiSimpleWalletClient {
     private static final Logger log = LoggerFactory.getLogger(GuiSimpleWalletClient.class);
 
-    private JTextField creditAmountText;
+    private JFormattedTextField creditAmountText;
     private JButton creditButton;
-    private JTextField debitAmountText;
+    private JFormattedTextField debitAmountText;
     private JButton debitButton;
     private JPanel creditPanel;
     private JPanel debitPanel;
@@ -29,37 +33,65 @@ public class GuiSimpleWalletClient {
         JFrame frame = new JFrame("Simple Wallet");
         frame.setContentPane(new GuiSimpleWalletClient().rootPanel);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        frame.pack();
+        //frame.pack();
+        frame.setSize(new Dimension(350, 150));
+        frame.setResizable(false);
         frame.setVisible(true);
     }
 
     private GuiSimpleWalletClient() {
+        Border padding = BorderFactory.createEmptyBorder(10, 10, 10, 10);
+        rootPanel.setBorder(padding);
+
+        NumberFormat format = NumberFormat.getInstance();
+        NumberFormatter formatter = new NumberFormatter(format);
+        formatter.setValueClass(Integer.class);
+        formatter.setMinimum(0);
+        formatter.setMaximum(127);
+        formatter.setAllowsInvalid(false);
+        DefaultFormatterFactory formatterFactory = new DefaultFormatterFactory(formatter);
+
+        creditAmountText.setFormatterFactory(formatterFactory);
+        debitAmountText.setFormatterFactory(formatterFactory);
+
         creditButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
+                String amountText = creditAmountText.getText();
+                if (amountText.isEmpty()) {
+                    return;
+                }
+
                 try {
-                    int amount = Integer.parseInt(creditAmountText.getText());
+                    int amount = Integer.parseInt(amountText);
                     if (amount > 0) {
                         walletService.issueCredit(amount);
                         refreshUI();
                     }
-                } catch (CardException ex) {
-                    showError(String.format("Error issuing credit: %s", ex));
+                } catch (Exception ex) {
+                    log.error("Credit error", ex);
+                    showError(String.format("Error issuing credit: %s", ex.getMessage()));
                 }
             }
         });
 
         debitButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
+                String amountText = creditAmountText.getText();
+                if (amountText.isEmpty()) {
+                    return;
+                }
+
                 try {
-                    int amount = Integer.parseInt(debitAmountText.getText());
+                    int amount = Integer.parseInt(amountText);
                     if (amount > 0) {
                         walletService.issueDebit(amount);
                         refreshUI();
                     }
                 } catch (NotEnoughMoneyException ex) {
                     showError("You can't afford that!");
-                } catch (CardException ex) {
-                    showError(String.format("Error issuing debit: %s", ex));
+                } catch (Exception ex) {
+                    log.error("Debit error", ex);
+                    showError(String.format("Error issuing debit: %s", ex.getMessage()));
                 }
             }
         });
@@ -88,27 +120,23 @@ public class GuiSimpleWalletClient {
                     try {
                         walletService = WalletService.acceptCard(terminalIndex, true);
                     } catch (Exception ex) {
-                        log.error("Card failure: %s", ex);
-                        //exitApp();
+                        log.error("acceptCard error:", ex);
+                        showError(String.format("Error reading card: %s", ex.getMessage()));
+                        exitApp();
+                        break;
                     }
 
-                    SwingUtilities.invokeLater(new Runnable() {
-                        public void run() {
-                            refreshUI();
-                        }
-                    });
+                    refreshUI();
 
                     if (walletService != null && walletService.isCardPresent()) {
                         walletService.waitForRemoval();
                         walletService = null;
                     }
 
-                    SwingUtilities.invokeLater(new Runnable() {
-                        public void run() {
-                            refreshUI();
-                        }
-                    });
+                    refreshUI();
                 }
+
+                return null;
             }
         };
 
@@ -120,6 +148,7 @@ public class GuiSimpleWalletClient {
 
         debitButton.setEnabled(isCardPresent);
         debitAmountText.setEnabled(isCardPresent);
+
         creditButton.setEnabled(isCardPresent);
         creditAmountText.setEnabled(isCardPresent);
 
@@ -127,9 +156,15 @@ public class GuiSimpleWalletClient {
         if (isCardPresent) {
             try {
                 short balance = walletService.getBalance();
+
+                debitAmountText.setEnabled(balance > 0);
+                debitButton.setEnabled(balance > 0);
+
                 balanceText = String.format("%d", balance);
             } catch (CardException ex) {
-                balanceText = String.format("Error: %s", ex);
+                log.error("Error getting balance", ex);
+                balanceText = "Error";
+                showError(String.format("Error getting balance: %s", ex.getMessage()));
             }
         } else {
             balanceText = "Waiting for card...";

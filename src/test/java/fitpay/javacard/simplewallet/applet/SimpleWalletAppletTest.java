@@ -19,7 +19,6 @@ import com.licel.jcardsim.utils.ByteUtil;
 
 import fitpay.javacard.simplewallet.applet.SimpleWalletApplet;
 
-@SuppressWarnings("restriction")
 public class SimpleWalletAppletTest {
     private CardSimulator simulator;
     private AID aid = AIDUtil.create("FITPAYRULEZ!");
@@ -35,7 +34,6 @@ public class SimpleWalletAppletTest {
         toggleDebug();
     }
 
-    @SuppressWarnings("restriction")
     @Test
     public void canIssueCredit() {
         int amount = 5;
@@ -60,7 +58,6 @@ public class SimpleWalletAppletTest {
     }
 
     @Test
-    @SuppressWarnings("restriction")
     public void negativeBalanceNotAllowed() {
         issueCredit(5);
         ResponseAPDU response = issueDebit(10, false);
@@ -68,12 +65,10 @@ public class SimpleWalletAppletTest {
         assertNotEquals(0x9000, response.getSW());
     }
 
-    @SuppressWarnings("restriction")
     private ResponseAPDU issueDebit(int amount) {
         return issueDebit(amount, true);
     }
 
-    @SuppressWarnings("restriction")
     private ResponseAPDU issueDebit(int amount, boolean forceSuccessful) {
         byte[] request = new byte[] {(byte)0xb0, (byte)0x30, (byte)0x00, (byte)0x00, (byte)0x01, (byte)amount};
         ResponseAPDU response = simulator.transmitCommand(new CommandAPDU(request));
@@ -85,7 +80,6 @@ public class SimpleWalletAppletTest {
         return response;
     }
 
-    @SuppressWarnings("restriction")
     private void issueCredit(int amount) {
         byte[] request = new byte[] {(byte)0xb0, (byte)0x40, (byte)0x00, (byte)0x00, (byte)0x01, (byte)amount};
         ResponseAPDU response = simulator.transmitCommand(new CommandAPDU(request));
@@ -93,7 +87,6 @@ public class SimpleWalletAppletTest {
         assertEquals("issue credit failed", 0x9000, response.getSW());
     }
 
-    @SuppressWarnings("restriction")
     private short getBalance() {
         byte[] brequest = new byte[] {(byte)0xb0, (byte)0x50, (byte)0x00, (byte)0x00, (byte)0x02};
         ResponseAPDU response = simulator.transmitCommand(new CommandAPDU(brequest));
@@ -104,7 +97,6 @@ public class SimpleWalletAppletTest {
         return buf.asShortBuffer().get();
     }
 
-    @SuppressWarnings("restriction")
     private void toggleDebug() {
         byte[] request = new byte[] {(byte)0xb0, (byte)0x60, (byte)0x00, (byte)0x00};
         ResponseAPDU response = simulator.transmitCommand(new CommandAPDU(request));

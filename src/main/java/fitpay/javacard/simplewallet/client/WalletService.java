@@ -1,6 +1,7 @@
 package fitpay.javacard.simplewallet.client;
 
 import com.licel.jcardsim.utils.AIDUtil;
+import com.licel.jcardsim.utils.ByteUtil;
 import fitpay.javacard.simplewallet.NotEnoughMoneyException;
 import jnasmartcardio.Smartcardio;
 import org.slf4j.Logger;
@@ -42,52 +43,57 @@ public class WalletService {
                 terminal.waitForCardAbsent(1000);
             } while (terminal.isCardPresent());
         } catch (CardException ex) {
-            log.error("Error: %s", ex);
+            log.error("waitForRemoval error", ex);
+            throw new RuntimeException(String.format("Error waiting for card removal: %s", ex.getMessage()));
         }
     }
 
     public static WalletService acceptCard(int terminalIndex, boolean waitForCard) throws CardException, NoSuchAlgorithmException {
-        log.debug("default type: " + TerminalFactory.getDefaultType());
+        log.debug(String.format("Terminal default type: %s", TerminalFactory.getDefaultType()));
 
         TerminalFactory terminalFactory = TerminalFactory.getInstance("PC/SC", null, new Smartcardio());
         List<CardTerminal> terminals = terminalFactory.terminals().list();
-        log.debug("terminal count: " + terminals.size());
+        log.debug(String.format("Terminal count: %d", terminals.size()));
 
         if (terminals.size() == 0) {
-            log.error("no terminal found");
+            log.error("No terminal found");
             throw new RuntimeException("No terminal found");
         }
 
         CardTerminal cardTerminal = terminals.get(terminalIndex);
-        log.debug("terminal: " + cardTerminal);
+        log.debug("Terminal: " + cardTerminal.getName());
 
         if (waitForCard) {
-            log.debug("waiting for card");
+            log.debug("Waiting for card...");
             while (true) {
                 try {
                     cardTerminal.waitForCardPresent(1000);
                     if (cardTerminal.isCardPresent()) {
-                        log.debug("card found... connecting....");
+                        log.debug("Card inserted");
                         break;
                     }
                 } catch (CardException ex) {
-                    log.error("Card error: %s", ex);
+                    log.error("Error waiting for card", ex);
+                    throw ex;
                 }
             }
         } else if (!cardTerminal.isCardPresent()) {
+            log.debug("Card is not inserted");
             return null;
         }
 
-        Card card = cardTerminal.connect("T=1");
-        log.debug("connected to card: " + card);
+        final String protocol = "T=1";
+
+        log.debug(String.format("Connecting to card with protocol %s...", protocol));
+        Card card = cardTerminal.connect(protocol);
+        log.debug(String.format("Connected to card: %s", ByteUtil.hexString(card.getATR().getBytes())));
 
         CardChannel channel = card.getBasicChannel();
 
         // Select app
         ResponseAPDU response = channel.transmit(new CommandAPDU(AIDUtil.select("FITPAYRULEZ!")));
-        log.debug("select response: " + response);
         if (response.getSW() != 0x9000) {
-            log.error("no fitpay wallet found, is it installed?");
+            log.error(String.format("Wallet app not found on card. Response: %s", response.getSW()));
             throw new RuntimeException("Card does not contain wallet app");
         }
 
@@ -106,6 +112,10 @@ public class WalletService {
     }
 
     public void issueCredit(int amount) throws CardException {
+        if (amount > 127) {
+            throw new IllegalArgumentException("amount must be <= 127");
+        }
+
         byte[] request = new byte[] {(byte)0xb0, (byte)0x40, (byte)0x00, (byte)0x00, (byte)0x01, (byte)amount};
         ResponseAPDU response = channel.transmit(new CommandAPDU(request));
         if (response.getSW() != 0x9000) {
@@ -114,6 +124,10 @@ public class WalletService {
     }
 
     public void issueDebit(int amount) throws CardException {
+        if (amount > 127) {
+            throw new IllegalArgumentException("amount must be <= 127");
+        }
+
         byte[] request = new byte[] {(byte)0xb0, (byte)0x30, (byte)0x00, (byte)0x00, (byte)0x01, (byte)amount};
         ResponseAPDU response = channel.transmit(new CommandAPDU(request));
         if (response.getSW() != 0x9000) {
