@@ -17,13 +17,9 @@ import java.text.NumberFormat;
 public class GuiSimpleWalletClient {
     private static final Logger log = LoggerFactory.getLogger(GuiSimpleWalletClient.class);
 
-    private JFormattedTextField creditAmountText;
     private JButton creditButton;
-    private JFormattedTextField debitAmountText;
+    private JFormattedTextField amountText;
     private JButton debitButton;
-    private JPanel creditPanel;
-    private JPanel debitPanel;
-    private JPanel balancePanel;
     private JLabel balanceLabel;
     private JPanel rootPanel;
 
@@ -34,7 +30,7 @@ public class GuiSimpleWalletClient {
         frame.setContentPane(new GuiSimpleWalletClient().rootPanel);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         //frame.pack();
-        frame.setSize(new Dimension(350, 150));
+        frame.setSize(new Dimension(350, 100));
         frame.setResizable(false);
         frame.setVisible(true);
     }
@@ -50,54 +46,60 @@ public class GuiSimpleWalletClient {
         //formatter.setMaximum(Short.MAX_VALUE);  // Screws up input
         formatter.setAllowsInvalid(false);
         DefaultFormatterFactory formatterFactory = new DefaultFormatterFactory(formatter);
-
-        creditAmountText.setFormatterFactory(formatterFactory);
-        debitAmountText.setFormatterFactory(formatterFactory);
+        amountText.setFormatterFactory(formatterFactory);
 
         creditButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                String amountText = creditAmountText.getText();
-                if (amountText.length() == 0) {
-                    return;
-                }
-
-                try {
-                    short amount = Short.parseShort(amountText);
-                    if (amount > 0) {
-                        walletService.issueCredit(amount);
-                        refreshUI();
-                    }
-                } catch (Exception ex) {
-                    log.error("Credit error", ex);
-                    showError(String.format("Error issuing credit: %s", ex.getMessage()));
-                }
+                onCreditClicked();
             }
         });
 
         debitButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                String amountText = debitAmountText.getText();
-                if (amountText.length() == 0) {
-                    return;
-                }
-
-                try {
-                    short amount = Short.parseShort(amountText);
-                    if (amount > 0) {
-                        walletService.issueDebit(amount);
-                        refreshUI();
-                    }
-                } catch (NotEnoughMoneyException ex) {
-                    showError("Insufficient funds");
-                } catch (Exception ex) {
-                    log.error("Debit error", ex);
-                    showError(String.format("Error issuing debit: %s", ex.getMessage()));
-                }
+                onDebitClicked();
             }
         });
 
         refreshUI();
         connectCard();
+    }
+
+    private void onCreditClicked() {
+        String amountStr = amountText.getText();
+        if (amountStr.length() == 0) {
+            return;
+        }
+
+        try {
+            short amount = Short.parseShort(amountStr);
+            if (amount > 0) {
+                walletService.issueCredit(amount);
+                refreshUI();
+            }
+        } catch (Exception ex) {
+            log.error("Credit error", ex);
+            showError(String.format("Error issuing credit: %s", ex.getMessage()));
+        }
+    }
+
+    private void onDebitClicked() {
+        String amountStr = amountText.getText();
+        if (amountStr.length() == 0) {
+            return;
+        }
+
+        try {
+            short amount = Short.parseShort(amountStr);
+            if (amount > 0) {
+                walletService.issueDebit(amount);
+                refreshUI();
+            }
+        } catch (NotEnoughMoneyException ex) {
+            showError("Insufficient funds");
+        } catch (Exception ex) {
+            log.error("Debit error", ex);
+            showError(String.format("Error issuing debit: %s", ex.getMessage()));
+        }
     }
 
     private void showError(String message) {
@@ -146,18 +148,16 @@ public class GuiSimpleWalletClient {
     private void refreshUI() {
         boolean isCardPresent = (walletService != null && walletService.isCardPresent());
 
+        amountText.setEnabled(isCardPresent);
         debitButton.setEnabled(isCardPresent);
-        debitAmountText.setEnabled(isCardPresent);
-
         creditButton.setEnabled(isCardPresent);
-        creditAmountText.setEnabled(isCardPresent);
 
         String balanceText;
         if (isCardPresent) {
             try {
                 short balance = walletService.getBalance();
 
-                debitAmountText.setEnabled(balance > 0);
+                amountText.setEnabled(balance > 0);
                 debitButton.setEnabled(balance > 0);
 
                 balanceText = String.format("%d", balance);
