@@ -22,6 +22,7 @@
             </constraints>
             <properties>
               <text value="Debit"/>
+              <toolTipText value="Debit amont from card"/>
             </properties>
           </component>
           <component id="e199c" class="javax.swing.JFormattedTextField" binding="amountText">
@@ -40,6 +41,7 @@
             </constraints>
             <properties>
               <text value="Credit"/>
+              <toolTipText value="Credit amount to card"/>
             </properties>
           </component>
         </children>

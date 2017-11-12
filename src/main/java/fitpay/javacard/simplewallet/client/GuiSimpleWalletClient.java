@@ -32,6 +32,13 @@ public class GuiSimpleWalletClient {
         //frame.pack();
         frame.setSize(new Dimension(350, 100));
         frame.setResizable(false);
+
+        // Center window
+        Dimension dimension = Toolkit.getDefaultToolkit().getScreenSize();
+        int x = (int) ((dimension.getWidth() - frame.getWidth()) / 2);
+        int y = (int) ((dimension.getHeight() - frame.getHeight()) / 2);
+        frame.setLocation(x, y);
+
         frame.setVisible(true);
     }
 
@@ -64,14 +71,18 @@ public class GuiSimpleWalletClient {
         connectCard();
     }
 
-    private void onCreditClicked() {
-        String amountStr = amountText.getText();
+    private short getAmount() {
+        String amountStr = amountText.getText().replaceAll(",", "");
         if (amountStr.length() == 0) {
-            return;
+            return 0;
         }
 
+        return Short.parseShort(amountStr);
+    }
+
+    private void onCreditClicked() {
         try {
-            short amount = Short.parseShort(amountStr);
+            short amount = getAmount();
             if (amount > 0) {
                 walletService.issueCredit(amount);
                 refreshUI();
@@ -83,13 +94,8 @@ public class GuiSimpleWalletClient {
     }
 
     private void onDebitClicked() {
-        String amountStr = amountText.getText();
-        if (amountStr.length() == 0) {
-            return;
-        }
-
         try {
-            short amount = Short.parseShort(amountStr);
+            short amount = getAmount();
             if (amount > 0) {
                 walletService.issueDebit(amount);
                 refreshUI();
@@ -129,6 +135,7 @@ public class GuiSimpleWalletClient {
                     }
 
                     refreshUI();
+                    amountText.requestFocus();
 
                     if (walletService != null && walletService.isCardPresent()) {
                         walletService.waitForRemoval();
@@ -157,7 +164,6 @@ public class GuiSimpleWalletClient {
             try {
                 short balance = walletService.getBalance();
 
-                amountText.setEnabled(balance > 0);
                 debitButton.setEnabled(balance > 0);
 
                 balanceText = String.format("%d", balance);

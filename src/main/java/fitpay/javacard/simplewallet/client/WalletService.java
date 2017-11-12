@@ -87,9 +87,15 @@ public class WalletService {
 
         final String protocol = "T=1";
 
-        log.debug(String.format("Connecting to card with protocol %s...", protocol));
-        Card card = cardTerminal.connect(protocol);
-        log.debug(String.format("Connected to card: %s", ByteUtil.hexString(card.getATR().getBytes())));
+        Card card;
+        try {
+            log.debug(String.format("Connecting to card with protocol %s...", protocol));
+            card = cardTerminal.connect(protocol);
+            log.debug(String.format("Connected to card: %s", ByteUtil.hexString(card.getATR().getBytes())));
+        } catch (CardException ex) {
+            log.error("Error connecting to card", ex);
+            return null;
+        }
 
         CardChannel channel = card.getBasicChannel();
 
